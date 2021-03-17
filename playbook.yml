@@ -3,35 +3,33 @@
   hosts: nodo01
  
   tasks:
-  - name: "Mirar HORA ANTES"
-    setup:
-      filter: ansible_*
-    register: salida_antes
+  - name: "Hostname y su hora"
+    debug:
+      msg: "El nodo {{ ansible_hostname }} tiene la hora: {{ ansible_date_time.time}}"
   - name: "Poner timezone en Europe/Moscow"
     timezone:
       name: Europe/Moscow
-  - name: "Mirar HORA DESPUES"
-    setup:
-      filter: ansible_*
-    register: salida_despues
-  - name: "imprimir salida_despues"
+  - name: "Mirar HORA DESPUES con comando"
+    command: "/usr/bin/date"
+    register: hora_despues
+  - name: "imprimir hora_despues"
     debug:
-      msg: "La salida es: {{ salida_despues.ansible_facts.ansible_hostname }}"
+      msg: "La hora despues es: {{ hora_despues.stdout_lines[0] }}"
+      
 
   - name: "Crear fichero"
     file:
-        path: "{{ salida_antes.ansible_facts.ansible_hostname }}"
+        path: "/tmp/datos_horario_{{ ansible_hostname }}.txt"
         state: touch
         mode: 0655
   - name: "Anadir datos al fichero"
     lineinfile:
-      path: "{{ salida_antes.ansible_facts.ansible_hostname }}"
+      path: "/tmp/datos_horario_{{ ansible_hostname }}.txt"
       line: |
-        - La zona horaria antes del cambio es zona_horaria_antes y la hora era {{ salida_antes.ansible_facts.ansible_data_time }}
-        - La zona horaria despues del cambio es zona_horaria_despues y la hora era {{ salida_despues.ansible_facts.ansible_data_time }}
+        - La zona horaria antes del cambio es {{ ansible_date_time.tz}} y la hora {{ ansible_date_time.time}}
+        - La hora y zona horaria despues del cambio es {{ hora_despues.stdout_lines[0] }}
       create: yes
   - name: "Volver a dejar en Europe/Madrid"
     timezone:
       name: Europe/Madrid
-
 ...
